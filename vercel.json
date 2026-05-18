@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "framework": null,
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/api/push", "destination": "/api/push" },
+    { "source": "/api/summary", "destination": "/api/summary" },
+    { "source": "/api/stream", "destination": "/api/stream" },
+    { "source": "/api/accounts", "destination": "/api/accounts" },
+    { "source": "/health", "destination": "/api/health" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, X-API-Key, Authorization" }
+      ]
+    }
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 10
+    }
+  }
+}

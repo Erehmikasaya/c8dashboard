@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0a0e1a" />
+<title>C8 Command Center — Multi-VPS Treasury Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  tailwind.config = {
+    darkMode: ['class', '[data-theme="dark"]'],
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          display: ['Manrope', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  /* ─── Design tokens ────────────────────────────────────────── */
+  :root[data-theme="dark"] {
+    --bg-base:   #0a0e1a;
+    --bg-elev:   #0f1525;
+    --bg-card:   #131a2e;
+    --bg-card-2: #1a2240;
+    --bg-soft:   rgba(255,255,255,0.03);
+    --line:      rgba(255,255,255,0.07);
+    --line-strong: rgba(255,255,255,0.13);
+    --text:      #f0f4ff;
+    --text-2:    #c1cae0;
+    --mute:      #7a8aa8;
+    --mute-2:    #5a6b8a;
+    --accent:    #c9a96a;     /* champagne gold */
+    --accent-2:  #8b6f3d;
+    --pos:       #4ade80;
+    --neg:       #f87171;
+    --warn:      #fbbf24;
+    --grad-1:    linear-gradient(135deg, #c9a96a 0%, #e6c882 50%, #c9a96a 100%);
+    --shadow:    0 1px 2px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.3);
+  }
+  :root[data-theme="light"] {
+    --bg-base:   #f6f5f0;     /* warm off-white, finance paper */
+    --bg-elev:   #fbfaf6;
+    --bg-card:   #ffffff;
+    --bg-card-2: #f5f2ea;
+    --bg-soft:   rgba(0,0,0,0.02);
+    --line:      rgba(20,30,55,0.08);
+    --line-strong: rgba(20,30,55,0.16);
+    --text:      #1a2138;
+    --text-2:    #3a4564;
+    --mute:      #6b7896;
+    --mute-2:    #8b9aba;
+    --accent:    #8a6b2e;
+    --accent-2:  #6b5121;
+    --pos:       #15803d;
+    --neg:       #b91c1c;
+    --warn:      #b45309;
+    --grad-1:    linear-gradient(135deg, #8a6b2e 0%, #c9a96a 100%);
+    --shadow:    0 1px 2px rgba(20,30,55,.05), 0 4px 16px rgba(20,30,55,.06);
+  }
+
+  html, body { background: var(--bg-base); color: var(--text); }
+  body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+
+  .display { font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.02em; font-feature-settings: "ss01","tnum","cv11"; }
+  .num   { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .gold  { color: var(--accent); }
+  .grad  { background: var(--grad-1); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .surface { background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+  .surface-elev { background: linear-gradient(180deg, var(--bg-card-2) 0%, var(--bg-card) 100%); border: 1px solid var(--line-strong); border-radius: 16px; box-shadow: var(--shadow); }
+  .hairline { border-color: var(--line); }
+  .hairline-strong { border-color: var(--line-strong); }
+
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; font-size: 11px; font-weight: 500; border-radius: 4px; letter-spacing: 0.04em; text-transform: uppercase; border: 1px solid var(--line-strong); color: var(--text-2); background: var(--bg-soft); }
+  .chip.ok      { color: var(--pos); border-color: color-mix(in srgb, var(--pos) 35%, transparent); background: color-mix(in srgb, var(--pos) 8%, transparent); }
+  .chip.err     { color: var(--neg); border-color: color-mix(in srgb, var(--neg) 35%, transparent); background: color-mix(in srgb, var(--neg) 8%, transparent); }
+  .chip.pending { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, transparent); background: color-mix(in srgb, var(--warn) 8%, transparent); }
+  .chip.idle    { color: var(--mute); }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .dot.live { background: var(--pos); box-shadow: 0 0 0 0 color-mix(in srgb, var(--pos) 70%, transparent); animation: pulse 2s infinite; }
+  .dot.idle { background: var(--mute-2); }
+  .dot.err  { background: var(--neg); }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pos) 60%, transparent); }
+    70%  { box-shadow: 0 0 0 8px color-mix(in srgb, var(--pos) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pos) 0%, transparent); }
+  }
+
+  /* hero numbers */
+  .stat-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mute); }
+  .stat-value { font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+  .stat-sub   { font-size: 12px; color: var(--text-2); font-weight: 500; }
+  .delta-pos { color: var(--pos); }
+  .delta-neg { color: var(--neg); }
+
+  /* table */
+  table { border-collapse: separate; border-spacing: 0; width: 100%; }
+  thead th { position: sticky; top: 0; background: var(--bg-card); z-index: 1; font-weight: 600; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute); padding: 12px 14px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+  tbody td { padding: 11px 14px; font-size: 13.5px; border-bottom: 1px solid var(--line); }
+  tbody tr:hover { background: var(--bg-soft); }
+  tbody tr:last-child td { border-bottom: 0; }
+  th.sortable { cursor: pointer; user-select: none; transition: color .15s; }
+  th.sortable:hover { color: var(--accent); }
+  .sort-arrow { opacity: .35; margin-left: 4px; font-size: 10px; }
+  .sort-active .sort-arrow { opacity: 1; color: var(--accent); }
+  .row-error { background: color-mix(in srgb, var(--neg) 5%, transparent); }
+  .row-flash { animation: flash 1.2s ease; }
+  @keyframes flash { 0% { background: color-mix(in srgb, var(--accent) 12%, transparent); } 100% { background: transparent; } }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--mute-2); }
+
+  /* toast */
+  .toast { animation: slidein .25s ease; }
+  @keyframes slidein { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* btn */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; font-size: 13px; font-weight: 500; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--bg-card); color: var(--text); transition: all .15s; cursor: pointer; }
+  .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* input */
+  .input { background: var(--bg-card); border: 1px solid var(--line-strong); color: var(--text); padding: 8px 12px; font-size: 13px; border-radius: 8px; outline: none; transition: border-color .15s; }
+  .input:focus { border-color: var(--accent); }
+
+  /* tick line under hero */
+  .ticker { background: linear-gradient(90deg, var(--bg-elev), var(--bg-card), var(--bg-elev)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+
+  /* big display number — tegas, condensed feel */
+  .hero-num { font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif; font-weight: 800; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .hero-num.lighter { font-weight: 700; letter-spacing: -0.03em; }
+
+  /* switch card */
+  .switch-card { cursor: pointer; user-select: none; }
+  .switch-card:hover { border-color: var(--accent); }
+  .switch-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Fixed-height hero supaya layout tidak bergeser saat switch */
+  .hero-main { min-height: 200px; }                /* mobile */
+  @media (min-width: 640px) { .hero-main { min-height: 230px; } }
+  @media (min-width: 1024px) { .hero-main { min-height: 270px; } }
+
+  .side-card { min-height: 96px; }
+  @media (min-width: 640px) { .side-card { min-height: 110px; } }
+  @media (min-width: 1024px) { .side-card { min-height: 125px; } }
+
+  /* Stabilkan baris angka — line-height konsisten, tidak ada shift karena descender */
+  .hero-num { display: inline-block; }
+
+  /* hide arrow inputs */
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* spark */
+  .spark { display: block; width: 100%; height: 36px; }
+
+  /* status indicator inline */
+  .ind-row { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+</style>
+</head>
+
+<body class="min-h-screen">
+
+<!-- ───────────────────────────────────────────────────────────── -->
+<!-- Top Bar                                                       -->
+<!-- ───────────────────────────────────────────────────────────── -->
+<header class="sticky top-0 z-30 backdrop-blur" style="background: color-mix(in srgb, var(--bg-base) 88%, transparent); border-bottom: 1px solid var(--line);">
+  <div class="max-w-[1400px] mx-auto px-5 sm:px-8 py-3.5 flex items-center gap-5">
+    <!-- Brand -->
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg flex items-center justify-center font-black text-sm" style="background: var(--grad-1); color: #0a0e1a;">C8</div>
+      <div class="leading-tight">
+        <div class="display text-[17px] font-bold tracking-tight" style="color: var(--text);">Cantor8 Capital</div>
+        <div class="text-[10.5px] uppercase tracking-[0.18em]" style="color: var(--mute);">Multi-Account Treasury</div>
+      </div>
+    </div>
+
+    <!-- live status -->
+    <div class="hidden sm:flex items-center gap-2 ml-4 px-3 py-1.5 rounded-md" style="background: var(--bg-soft); border: 1px solid var(--line);">
+      <span id="status-dot" class="dot idle"></span>
+      <span id="status-text" class="text-xs font-medium" style="color: var(--text-2);">Idle</span>
+      <span class="opacity-30">·</span>
+      <span id="last-update" class="text-xs" style="color: var(--mute);">—</span>
+    </div>
+
+    <!-- right -->
+    <div class="ml-auto flex items-center gap-2">
+      <button id="btn-theme" class="btn" title="Toggle theme">
+        <svg id="icon-sun" class="hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span id="theme-label" class="text-xs">Dark</span>
+      </button>
+      <button id="btn-export" class="btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Toast -->
+<div id="toasts" class="fixed top-20 right-4 z-50 space-y-2"></div>
+
+<main class="max-w-[1400px] mx-auto px-5 sm:px-8 py-7 space-y-6">
+
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <!-- Hero: UNCLAIMED REWARDS (focus utama) + Portfolio (sekunder)  -->
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <section class="surface-elev p-6 sm:p-9 relative overflow-hidden">
+    <!-- ornamen sudut -->
+    <div class="absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-[0.06] pointer-events-none" style="background: var(--grad-1); filter: blur(40px);"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 relative">
+
+      <!-- ★ HERO — dynamic (Unclaimed Rewards ↔ Total Portfolio) ★ -->
+      <div class="hero-main lg:col-span-3 flex flex-col">
+        <div class="flex items-center gap-3 mb-4">
+          <div id="hero-label" class="stat-label">Unclaimed Rewards</div>
+          <span class="chip"><span class="dot live"></span>Live</span>
+        </div>
+
+        <!-- USD: tegas, besar, gold accent -->
+        <div class="flex items-baseline gap-2.5 leading-none">
+          <span id="hero-usd" class="hero-num text-[44px] sm:text-6xl lg:text-7xl gold">$0.00</span>
+        </div>
+
+        <!-- IDR: nominal kedua, weight medium -->
+        <div class="mt-3 flex items-baseline gap-2.5 leading-none">
+          <span id="hero-idr" class="hero-num lighter text-[26px] sm:text-4xl lg:text-[42px]" style="color: var(--text-2);">Rp 0</span>
+        </div>
+
+        <!-- meta dinamis -->
+        <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px]" style="color: var(--mute);">
+          <div id="hero-meta">—</div>
+          <div id="hero-fxrate" class="num">1 USD = Rp 0</div>
+        </div>
+      </div>
+
+      <!-- Side: Switch cards (klik untuk swap ke hero) + P&L -->
+      <div class="lg:col-span-2 flex flex-col gap-3">
+
+        <!-- 2 switch cards side by side — masing-masing tampilkan view alternatif -->
+        <div class="grid grid-cols-2 gap-3">
+          <button id="btn-switch-1" type="button" class="switch-card side-card surface p-4 sm:p-5 text-left transition" aria-pressed="false">
+            <div id="switch-1-label" class="stat-label">—</div>
+            <div class="mt-2 hero-num lighter text-xl sm:text-2xl lg:text-[26px]"><span id="switch-1-usd">$0.00</span></div>
+            <div class="mt-1 num text-[11.5px] truncate" style="color: var(--mute);" id="switch-1-idr">Rp 0</div>
+          </button>
+          <button id="btn-switch-2" type="button" class="switch-card side-card surface p-4 sm:p-5 text-left transition" aria-pressed="false">
+            <div id="switch-2-label" class="stat-label">—</div>
+            <div class="mt-2 hero-num lighter text-xl sm:text-2xl lg:text-[26px]"><span id="switch-2-usd">$0.00</span></div>
+            <div class="mt-1 num text-[11.5px] truncate" style="color: var(--mute);" id="switch-2-idr">Rp 0</div>
+          </button>
+        </div>
+
+        <!-- P&L sejak refresh -->
+        <div class="side-card surface p-4 sm:p-5">
+          <div class="stat-label">P&amp;L sejak Refresh</div>
+          <div id="hero-delta" class="mt-2 hero-num lighter text-2xl sm:text-3xl">—</div>
+          <div id="hero-delta-idr" class="mt-1 num text-[12px]" style="color: var(--mute);">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- holdings inline bar -->
+    <div class="mt-6 sm:mt-7 -mx-6 sm:-mx-9 ticker px-6 sm:px-9 py-3 grid grid-cols-2 sm:grid-cols-4 gap-x-5 gap-y-2 text-[12px]">
+      <div class="flex justify-between sm:block sm:text-left">
+        <span style="color: var(--mute);">CC</span>
+        <span class="num font-semibold ml-2" style="color: var(--text);" id="ind-cc">0.00</span>
+      </div>
+      <div class="flex justify-between sm:block sm:text-left">
+        <span style="color: var(--mute);">USDCx</span>
+        <span class="num font-semibold ml-2" style="color: var(--text);" id="ind-usdcx">0.0000</span>
+      </div>
+      <div class="flex justify-between sm:block sm:text-left">
+        <span style="color: var(--mute);">cETH</span>
+        <span class="num font-semibold ml-2" style="color: var(--text);" id="ind-ceth">0.000000</span>
+      </div>
+      <div class="flex justify-between sm:block sm:text-left">
+        <span style="color: var(--mute);">Akun aktif</span>
+        <span class="num font-semibold ml-2" style="color: var(--text);"><span id="ind-active">0</span>/<span id="ind-total">0</span></span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Stats strip (di bawah hero, full width) -->
+  <section class="surface px-5 sm:px-6 py-3.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-x-5 gap-y-3 text-[12px]">
+    <div class="flex sm:flex-col sm:items-start justify-between sm:gap-0.5">
+      <div class="stat-label">Reward</div>
+      <div><span class="num font-semibold" id="tk-reward">0.00</span> <span class="gold">CC</span></div>
+    </div>
+    <div class="flex sm:flex-col sm:items-start justify-between sm:gap-0.5">
+      <div class="stat-label">Claimed</div>
+      <div><span class="num font-semibold delta-pos" id="tk-claimed">0.00</span> <span class="gold">CC</span></div>
+    </div>
+    <div class="flex sm:flex-col sm:items-start justify-between sm:gap-0.5">
+      <div class="stat-label">Pending</div>
+      <div><span class="num font-semibold" style="color: var(--warn);" id="tk-pending">0.00</span> <span class="gold">CC</span></div>
+    </div>
+    <div class="flex sm:flex-col sm:items-start justify-between sm:gap-0.5">
+      <div class="stat-label">Swaps</div>
+      <div><span class="num font-semibold" id="tk-swaps">0</span></div>
+    </div>
+    <div class="flex sm:flex-col sm:items-start justify-between sm:gap-0.5 col-span-2 sm:col-span-4 lg:col-span-1">
+      <div class="stat-label">Harga</div>
+      <div id="tk-prices" class="num" style="color: var(--text-2);">CC <span>$0</span> · cETH <span>$0</span></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <!-- Asset breakdown (3 kartu) + Charts                            -->
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- CC card -->
+    <div class="surface p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="stat-label">CC Holdings</div>
+        <span class="chip">Cantor8</span>
+      </div>
+      <div class="hero-num text-3xl"><span id="ast-cc">0.00</span></div>
+      <div class="flex items-baseline justify-between mt-3 pt-3" style="border-top: 1px solid var(--line);">
+        <div>
+          <div class="stat-sub num" id="ast-cc-usd">$0.00</div>
+          <div class="text-[11px] num mt-0.5" style="color: var(--mute);" id="ast-cc-idr">Rp 0</div>
+        </div>
+        <div class="text-right text-[11px]" style="color: var(--mute);">@<span class="num gold" id="ast-cc-price">$0.0000</span></div>
+      </div>
+    </div>
+
+    <!-- USDCx card -->
+    <div class="surface p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="stat-label">USDCx Stablecoin</div>
+        <span class="chip">USD-pegged</span>
+      </div>
+      <div class="hero-num text-3xl"><span id="ast-usdcx">0.0000</span></div>
+      <div class="flex items-baseline justify-between mt-3 pt-3" style="border-top: 1px solid var(--line);">
+        <div>
+          <div class="stat-sub num" id="ast-usdcx-usd">$0.00</div>
+          <div class="text-[11px] num mt-0.5" style="color: var(--mute);" id="ast-usdcx-idr">Rp 0</div>
+        </div>
+        <div class="text-right text-[11px]" style="color: var(--mute);">≈ <span class="num gold">$1.00</span></div>
+      </div>
+    </div>
+
+    <!-- cETH card -->
+    <div class="surface p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="stat-label">cETH Bridged</div>
+        <span class="chip">Ethereum</span>
+      </div>
+      <div class="hero-num text-3xl"><span id="ast-ceth">0.000000</span></div>
+      <div class="flex items-baseline justify-between mt-3 pt-3" style="border-top: 1px solid var(--line);">
+        <div>
+          <div class="stat-sub num" id="ast-ceth-usd">$0.00</div>
+          <div class="text-[11px] num mt-0.5" style="color: var(--mute);" id="ast-ceth-idr">Rp 0</div>
+        </div>
+        <div class="text-right text-[11px]" style="color: var(--mute);">@<span class="num gold" id="ast-ceth-price">$0.00</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <!-- Charts                                                         -->
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="surface p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="display text-[15px] font-bold">Top 10 — Reward Bulan Ini</div>
+          <div class="text-[11px]" style="color: var(--mute);">Diukur dalam CC</div>
+        </div>
+      </div>
+      <div class="h-64"><canvas id="chart-reward"></canvas></div>
+    </div>
+    <div class="surface p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="display text-[15px] font-bold">Top 10 — Total Holdings</div>
+          <div class="text-[11px]" style="color: var(--mute);">Konversi USD (stacked)</div>
+        </div>
+      </div>
+      <div class="h-64"><canvas id="chart-balance"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <!-- Monthly compare                                                -->
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <section id="month-compare" class="hidden surface p-5">
+    <div class="display text-[15px] font-bold mb-4">Perbandingan Reward Bulanan</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="p-4 rounded-lg" style="background: var(--bg-soft); border: 1px solid var(--line);">
+        <div class="stat-label" id="mc-this-name">Bulan Ini</div>
+        <div class="hero-num text-2xl mt-1"><span id="mc-this-reward" class="num">0</span> <span class="text-xs gold">CC</span></div>
+        <div class="text-[11px] num mt-2" style="color: var(--mute);">Vol $<span id="mc-this-vol">0</span> · <span id="mc-this-swaps">0</span> swaps</div>
+      </div>
+      <div class="p-4 rounded-lg" style="background: var(--bg-soft); border: 1px solid var(--line);">
+        <div class="stat-label" id="mc-last-name">Bulan Lalu</div>
+        <div class="hero-num text-2xl mt-1"><span id="mc-last-reward" class="num">0</span> <span class="text-xs gold">CC</span></div>
+        <div class="text-[11px] num mt-2" style="color: var(--mute);">Vol $<span id="mc-last-vol">0</span> · <span id="mc-last-swaps">0</span> swaps</div>
+      </div>
+      <div class="p-4 rounded-lg" style="background: var(--bg-soft); border: 1px solid var(--line);">
+        <div class="stat-label">Δ Perubahan</div>
+        <div class="hero-num text-2xl mt-1" id="mc-diff">—</div>
+        <div class="text-[11px] mt-2" style="color: var(--mute);">All-time: <span class="num gold" id="mc-alltime">0</span> CC</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <!-- VPS Sources                                                    -->
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <section class="surface p-5">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="display text-[15px] font-bold">VPS Sources</div>
+      <span id="vps-count" class="text-[11px]" style="color: var(--mute);"></span>
+    </div>
+    <div id="vps-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      <div class="text-sm" style="color: var(--mute);">Belum ada VPS yang push data...</div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <!-- Table                                                          -->
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <section class="surface overflow-hidden">
+    <div class="p-5 flex flex-wrap items-center gap-3" style="border-bottom: 1px solid var(--line);">
+      <div>
+        <div class="display text-[15px] font-bold">Account Ledger</div>
+        <div class="text-[11px]" style="color: var(--mute);">Detail per akun · sortable</div>
+      </div>
+      <div class="ml-auto flex items-center gap-2 flex-wrap">
+        <input id="search" type="text" placeholder="Cari akun / error..." class="input w-56" />
+        <select id="filter-vps" class="input">
+          <option value="all">Semua VPS</option>
+        </select>
+        <select id="filter-status" class="input">
+          <option value="all">Semua status</option>
+          <option value="ok">OK</option>
+          <option value="error">Error</option>
+          <option value="pending">Pending</option>
+          <option value="idle">Idle</option>
+        </select>
+      </div>
+    </div>
+    <div class="overflow-x-auto max-h-[640px] overflow-y-auto">
+      <table>
+        <thead>
+          <tr>
+            <th class="sortable text-left" data-key="name">Akun <span class="sort-arrow">↕</span></th>
+            <th class="text-left">Status</th>
+            <th class="sortable text-right" data-key="cc">CC <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="usdcx">USDCx <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="ceth">cETH <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="_usd">Total $ <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="monthReward">Reward <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="delta">Δ <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="monthVolume">Volume $ <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="monthTxns">Swaps <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="rank">Rank <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="claimedReward">Claimed <span class="sort-arrow">↕</span></th>
+            <th class="sortable text-right" data-key="pendingReward">Pending <span class="sort-arrow">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="px-5 py-3 flex items-center justify-between text-[11px]" style="color: var(--mute); border-top: 1px solid var(--line);">
+      <span>Showing <span id="row-count" class="num">0</span> akun</span>
+      <span id="prices-info" class="num">—</span>
+    </div>
+  </section>
+
+  <footer class="text-center text-[11px] py-6" style="color: var(--mute);">
+    Cantor8 Capital · Internal Treasury Dashboard
+  </footer>
+</main>
+
+<script>
+// ── State ───────────────────────────────────────────────────────────────
+let DATA = { results: [], prices: { ccUsd: 0, cethUsd: 0 }, lastUpdate: null, running: false, done: 0, total: 0, includeLastMonth: false, accountCount: 0, sources: [] };
+let SORT = { key: 'monthReward', dir: 'desc' };
+let FILTER_TEXT = '';
+let FILTER_STATUS = 'all';
+let FILTER_VPS = 'all';
+let FX_USDIDR = 0;          // 1 USD = N IDR
+let FX_TS = 0;
+const FX_CACHE_MS = 30 * 60 * 1000;   // 30 menit
+const VIEW_ORDER = ['pending', 'claimed', 'portfolio'];
+let HERO_VIEW = localStorage.getItem('c8.heroView') || 'pending'; // 'pending' | 'claimed' | 'portfolio'
+if (!VIEW_ORDER.includes(HERO_VIEW)) HERO_VIEW = 'pending';
+
+// ── Helpers ─────────────────────────────────────────────────────────────
+const $ = (sel) => document.querySelector(sel);
+const fmt = (n, d=2) => (Number(n)||0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtInt = (n) => (Number(n)||0).toLocaleString('en-US');
+const fmtUSD = (n) => '$' + fmt(n, 2);
+const fmtUSDc = (n) => '$' + fmt(n, Math.abs(n) < 1 ? 4 : 2);
+const fmtIDR = (n) => {
+  const v = (Number(n)||0);
+  if (Math.abs(v) >= 1_000_000_000) return 'Rp ' + (v/1_000_000_000).toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' M';
+  if (Math.abs(v) >= 1_000_000)     return 'Rp ' + (v/1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' jt';
+  return 'Rp ' + Math.round(v).toLocaleString('id-ID');
+};
+const fmtIDRfull = (n) => 'Rp ' + Math.round(Number(n)||0).toLocaleString('id-ID');
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 5) return 'baru saja';
+  if (diff < 60) return Math.floor(diff) + 's lalu';
+  if (diff < 3600) return Math.floor(diff/60) + 'm lalu';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h lalu';
+  return Math.floor(diff/86400) + 'd lalu';
+}
+
+function toast(msg, type='info') {
+  const styles = { info: 'gold', ok: 'delta-pos', err: 'delta-neg', warn: '' };
+  const div = document.createElement('div');
+  div.className = 'toast surface px-4 py-2 text-sm font-medium';
+  div.style.borderLeft = `3px solid var(${type==='ok'?'--pos':type==='err'?'--neg':type==='warn'?'--warn':'--accent'})`;
+  div.textContent = msg;
+  $('#toasts').appendChild(div);
+  setTimeout(() => { div.style.transition='opacity .3s'; div.style.opacity='0'; setTimeout(()=>div.remove(), 300); }, 3500);
+}
+
+function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+// ── FX (USD → IDR) ─────────────────────────────────────────────────────
+async function ensureFx() {
+  if (FX_USDIDR && (Date.now() - FX_TS) < FX_CACHE_MS) return FX_USDIDR;
+  try {
+    // open.er-api.com gratis, no key
+    const r = await fetch('https://open.er-api.com/v6/latest/USD').then(r => r.json());
+    const rate = r?.rates?.IDR;
+    if (rate && rate > 0) { FX_USDIDR = rate; FX_TS = Date.now(); }
+  } catch { /* keep prev */ }
+  if (!FX_USDIDR) {
+    try {
+      const r2 = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=IDR').then(r => r.json());
+      const rate = r2?.rates?.IDR;
+      if (rate && rate > 0) { FX_USDIDR = rate; FX_TS = Date.now(); }
+    } catch { /* ignore */ }
+  }
+  return FX_USDIDR;
+}
+
+function fxToIdr(usd) {
+  if (!FX_USDIDR) return null;
+  return (Number(usd) || 0) * FX_USDIDR;
+}
+
+// ── Theme ───────────────────────────────────────────────────────────────
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('c8.theme', t);
+  $('#icon-sun').classList.toggle('hidden', t !== 'light');
+  $('#icon-moon').classList.toggle('hidden', t !== 'dark');
+  $('#theme-label').textContent = t === 'dark' ? 'Dark' : 'Light';
+  // chart re-color
+  if (window.rewardChart) renderCharts();
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('c8.theme');
+  setTheme(saved === 'light' ? 'light' : 'dark');
+  $('#btn-theme').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme');
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+}
+
+// ── Render: table ───────────────────────────────────────────────────────
+function getFiltered() {
+  const q = FILTER_TEXT.trim().toLowerCase();
+  return DATA.results.filter(r => {
+    if (FILTER_STATUS !== 'all' && r.status !== FILTER_STATUS) return false;
+    if (FILTER_VPS !== 'all' && (r.vpsId || '') !== FILTER_VPS) return false;
+    if (!q) return true;
+    return (r.name||'').toLowerCase().includes(q) || (r.error||'').toLowerCase().includes(q);
+  });
+}
+
+function computeUsd(r) {
+  return (r.cc||0) * (DATA.prices.ccUsd||0) + (r.usdcx||0) + (r.ceth||0) * (DATA.prices.cethUsd||0);
+}
+
+function sortRows(rows) {
+  const k = SORT.key, dir = SORT.dir === 'asc' ? 1 : -1;
+  return rows.slice().sort((a, b) => {
+    const va = k === '_usd' ? computeUsd(a) : a[k];
+    const vb = k === '_usd' ? computeUsd(b) : b[k];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+    return String(va).localeCompare(String(vb)) * dir;
+  });
+}
+
+function statusChip(s) {
+  const map = {
+    ok:      `<span class="chip ok"><span class="dot live"></span>OK</span>`,
+    error:   `<span class="chip err"><span class="dot err"></span>ERR</span>`,
+    pending: `<span class="chip pending"><span class="dot idle"></span>...</span>`,
+    idle:    `<span class="chip idle"><span class="dot idle"></span>—</span>`,
+  };
+  return map[s] || map.idle;
+}
+
+function rowHTML(r) {
+  if (r.error || r.status === 'error') {
+    return `<tr class="row-error" data-name="${escapeHtml(r.name)}">
+      <td class="font-medium">${escapeHtml(r.name)}</td>
+      <td>${statusChip('error')}</td>
+      <td colspan="11" class="text-xs" style="color: var(--neg);" title="${escapeHtml(r.error||'unknown')}">${escapeHtml(r.error||'unknown')}</td>
+    </tr>`;
+  }
+  if (r.status === 'pending' || r.status === 'idle') {
+    return `<tr data-name="${escapeHtml(r.name)}">
+      <td class="font-medium">${escapeHtml(r.name)}</td>
+      <td>${statusChip(r.status)}</td>
+      <td colspan="11" class="text-xs" style="color: var(--mute);">menunggu...</td>
+    </tr>`;
+  }
+  const delta = r.delta;
+  const deltaCell = delta == null ? '<span style="color: var(--mute);">—</span>'
+    : delta === 0 ? '<span class="num" style="color: var(--mute);">0.00</span>'
+    : delta > 0 ? `<span class="num delta-pos">+${fmt(delta,2)}</span>`
+                 : `<span class="num delta-neg">${fmt(delta,2)}</span>`;
+  const rank = r.rank ? `<span class="num">#${fmtInt(r.rank)}</span>` : '<span style="color: var(--mute);">—</span>';
+  const usd = computeUsd(r);
+  const idr = fxToIdr(usd);
+  const usdCell = `<span class="num font-semibold gold">${fmtUSD(usd)}</span>${idr!=null ? `<div class="text-[10.5px] num" style="color: var(--mute);">${fmtIDR(idr)}</div>` : ''}`;
+  return `<tr data-name="${escapeHtml(r.name)}">
+    <td class="font-medium">${escapeHtml(r.name)}</td>
+    <td>${statusChip('ok')}</td>
+    <td class="text-right num">${fmt(r.cc, 2)}</td>
+    <td class="text-right num">${fmt(r.usdcx, 4)}</td>
+    <td class="text-right num">${fmt(r.ceth, 6)}</td>
+    <td class="text-right">${usdCell}</td>
+    <td class="text-right num font-semibold gold">${fmt(r.monthReward, 2)}</td>
+    <td class="text-right">${deltaCell}</td>
+    <td class="text-right num">${fmt(r.monthVolume, 0)}</td>
+    <td class="text-right num">${fmtInt(r.monthTxns)}</td>
+    <td class="text-right">${rank}</td>
+    <td class="text-right num delta-pos">${fmt(r.claimedReward||0, 2)}</td>
+    <td class="text-right num" style="color: var(--warn);">${fmt(r.pendingReward||0, 2)}</td>
+  </tr>`;
+}
+
+function renderTable() {
+  const rows = sortRows(getFiltered());
+  $('#tbody').innerHTML = rows.map(rowHTML).join('') || `<tr><td colspan="13" class="px-3 py-8 text-center" style="color: var(--mute);">Tidak ada data</td></tr>`;
+  $('#row-count').textContent = rows.length;
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.classList.toggle('sort-active', th.dataset.key === SORT.key);
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = th.dataset.key === SORT.key ? (SORT.dir === 'asc' ? '↑' : '↓') : '↕';
+  });
+}
+
+// ── Render: summary / hero ──────────────────────────────────────────────
+function renderSummary() {
+  const active = DATA.results.filter(r => r.status === 'ok');
+  let cc=0, usdcx=0, ceth=0, reward=0, swaps=0, deltaSum=0, hasDelta=false;
+  let lastReward=0, lastVol=0, lastSwaps=0, thisVol=0, allTime=0;
+  let claimed=0, pending=0;
+  for (const r of active) {
+    cc += r.cc||0; usdcx += r.usdcx||0; ceth += r.ceth||0;
+    reward += r.monthReward||0; swaps += r.monthTxns||0;
+    thisVol += r.monthVolume||0;
+    if (r.delta != null) { deltaSum += r.delta; hasDelta = true; }
+    lastReward += r.lastMonthReward||0;
+    lastVol += r.lastMonthVolume||0;
+    lastSwaps += r.lastMonthTxns||0;
+    allTime += r.totalReward||0;
+    claimed += r.claimedReward||0;
+    pending += r.pendingReward||0;
+  }
+
+  const ccUsd = DATA.prices.ccUsd || 0;
+  const cethUsd = DATA.prices.cethUsd || 0;
+  const totalUsd = cc * ccUsd + usdcx + ceth * cethUsd;
+
+  // ── Hero (dynamic: pending ↔ claimed ↔ portfolio) ──
+  const pendingUsd = pending * ccUsd;
+  const claimedUsd = claimed * ccUsd;
+  const pendingIdr = fxToIdr(pendingUsd);
+  const claimedIdr = fxToIdr(claimedUsd);
+  const totalIdr = fxToIdr(totalUsd);
+
+  // 3 views — yang aktif di hero, 2 lainnya di switch cards
+  const views = {
+    pending: {
+      label: 'Unclaimed Rewards',
+      usd: pendingUsd,
+      idr: pendingIdr,
+      meta: `<span class="num font-semibold" style="color: var(--text);">${fmt(pending, 2)}</span> <span class="gold">CC</span> pending`,
+    },
+    claimed: {
+      label: 'Claimed Rewards',
+      usd: claimedUsd,
+      idr: claimedIdr,
+      meta: `<span class="num font-semibold" style="color: var(--text);">${fmt(claimed, 2)}</span> <span class="gold">CC</span> claimed`,
+    },
+    portfolio: {
+      label: 'Total Portfolio',
+      usd: totalUsd,
+      idr: totalIdr,
+      meta: `<span class="num font-semibold" style="color: var(--text);">${fmt(cc, 2)}</span> <span class="gold">CC</span> balance`,
+    },
+  };
+  const activeView = views[HERO_VIEW] || views.pending;
+  const otherKeys = VIEW_ORDER.filter(k => k !== HERO_VIEW);
+
+  // Hero (big)
+  $('#hero-label').textContent = activeView.label;
+  $('#hero-usd').textContent = fmtUSD(activeView.usd);
+  $('#hero-idr').textContent = activeView.idr != null ? fmtIDRfull(activeView.idr) : 'Rp —';
+  $('#hero-meta').innerHTML = activeView.meta;
+  $('#hero-fxrate').textContent = FX_USDIDR ? `1 USD = Rp ${Math.round(FX_USDIDR).toLocaleString('id-ID')}` : 'FX loading...';
+
+  // 2 switch cards (each shows one alternate view; click to swap into hero)
+  otherKeys.forEach((key, idx) => {
+    const v = views[key];
+    const n = idx + 1;
+    $(`#switch-${n}-label`).textContent = v.label;
+    $(`#switch-${n}-usd`).textContent = fmtUSD(v.usd);
+    $(`#switch-${n}-idr`).textContent = v.idr != null ? fmtIDRfull(v.idr) : 'Rp —';
+    const btn = $(`#btn-switch-${n}`);
+    btn.dataset.view = key;
+    btn.setAttribute('title', `Tampilkan ${v.label} di hero`);
+  });
+
+  // Holdings indicators
+  $('#ind-cc').textContent = fmt(cc, 2);
+  $('#ind-usdcx').textContent = fmt(usdcx, 4);
+  $('#ind-ceth').textContent = fmt(ceth, 6);
+  $('#ind-active').textContent = active.length;
+  $('#ind-total').textContent = DATA.accountCount || DATA.results.length;
+
+  // Δ P&L
+  if (hasDelta) {
+    const sign = deltaSum >= 0 ? '+' : '';
+    const dUsd = deltaSum * ccUsd;
+    const dIdr = fxToIdr(dUsd);
+    const cls = deltaSum >= 0 ? 'delta-pos' : 'delta-neg';
+    $('#hero-delta').innerHTML = `<span class="${cls}">${sign}${ccUsd?fmtUSD(dUsd):fmt(deltaSum,2)+' CC'}</span>`;
+    $('#hero-delta-idr').textContent = dIdr != null ? `${sign}${fmtIDRfull(dIdr)}` : (sign + fmt(deltaSum,2) + ' CC');
+  } else {
+    $('#hero-delta').textContent = '—';
+    $('#hero-delta-idr').textContent = 'belum ada baseline';
+  }
+
+  // Stats strip
+  $('#tk-reward').textContent = fmt(reward, 2);
+  $('#tk-claimed').textContent = fmt(claimed, 2);
+  $('#tk-pending').textContent = fmt(pending, 2);
+  $('#tk-swaps').textContent = fmtInt(swaps);
+  $('#tk-prices').innerHTML = `CC <span>${fmtUSDc(ccUsd)}</span> · cETH <span>${fmtUSD(cethUsd)}</span>`;
+
+  // Asset cards
+  $('#ast-cc').textContent = fmt(cc, 2);
+  $('#ast-cc-usd').textContent = fmtUSD(cc * ccUsd);
+  $('#ast-cc-idr').textContent = fxToIdr(cc*ccUsd) != null ? fmtIDR(fxToIdr(cc*ccUsd)) : 'Rp —';
+  $('#ast-cc-price').textContent = fmtUSDc(ccUsd);
+
+  $('#ast-usdcx').textContent = fmt(usdcx, 4);
+  $('#ast-usdcx-usd').textContent = fmtUSD(usdcx);
+  $('#ast-usdcx-idr').textContent = fxToIdr(usdcx) != null ? fmtIDR(fxToIdr(usdcx)) : 'Rp —';
+
+  $('#ast-ceth').textContent = fmt(ceth, 6);
+  $('#ast-ceth-usd').textContent = fmtUSD(ceth * cethUsd);
+  $('#ast-ceth-idr').textContent = fxToIdr(ceth*cethUsd) != null ? fmtIDR(fxToIdr(ceth*cethUsd)) : 'Rp —';
+  $('#ast-ceth-price').textContent = fmtUSD(cethUsd);
+
+  $('#prices-info').innerHTML = `CC <span class="gold">${fmtUSDc(ccUsd)}</span> · cETH <span class="gold">${fmtUSD(cethUsd)}</span> · USD/IDR <span class="gold">${FX_USDIDR?Math.round(FX_USDIDR).toLocaleString('id-ID'):'—'}</span>`;
+
+  // Month compare
+  if (DATA.includeLastMonth) {
+    $('#month-compare').classList.remove('hidden');
+    const now = new Date();
+    const fmtMonth = (off) => new Date(now.getFullYear(), now.getMonth()+off, 1).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+    $('#mc-this-name').textContent = fmtMonth(0);
+    $('#mc-last-name').textContent = fmtMonth(-1);
+    $('#mc-this-reward').textContent = fmt(reward, 2);
+    $('#mc-this-vol').textContent = fmt(thisVol, 0);
+    $('#mc-this-swaps').textContent = fmtInt(swaps);
+    $('#mc-last-reward').textContent = fmt(lastReward, 2);
+    $('#mc-last-vol').textContent = fmt(lastVol, 0);
+    $('#mc-last-swaps').textContent = fmtInt(lastSwaps);
+    const diff = reward - lastReward;
+    $('#mc-diff').innerHTML = `<span class="${diff>=0?'delta-pos':'delta-neg'}">${diff>=0?'▲ +':'▼ '}${fmt(diff,2)} CC</span>`;
+    $('#mc-alltime').textContent = fmt(allTime, 2);
+  }
+}
+
+// ── Charts ──────────────────────────────────────────────────────────────
+let rewardChart, balanceChart;
+
+function chartTheme() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  Chart.defaults.color = dark ? '#a8b4cf' : '#5a6b8a';
+  Chart.defaults.borderColor = dark ? 'rgba(255,255,255,0.08)' : 'rgba(20,30,55,0.1)';
+  Chart.defaults.font.family = 'Inter';
+}
+
+function initCharts() {
+  chartTheme();
+  rewardChart = new Chart($('#chart-reward'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'Reward CC', data: [], borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+  });
+  balanceChart = new Chart($('#chart-balance'), {
+    type: 'bar',
+    data: { labels: [], datasets: [
+      { label: 'CC',    data: [], stack: 's', borderRadius: 4 },
+      { label: 'USDCx', data: [], stack: 's', borderRadius: 4 },
+      { label: 'cETH',  data: [], stack: 's', borderRadius: 4 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { stacked: true, beginAtZero: true }, x: { stacked: true, grid: { display: false } } } }
+  });
+}
+
+function renderCharts() {
+  chartTheme();
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const goldA = dark ? 'rgba(201,169,106,0.85)' : 'rgba(138,107,46,0.85)';
+  const c2    = dark ? 'rgba(74,222,128,0.65)' : 'rgba(21,128,61,0.7)';
+  const c3    = dark ? 'rgba(96,165,250,0.65)' : 'rgba(37,99,235,0.7)';
+
+  const active = DATA.results.filter(r => r.status === 'ok');
+  const topR = active.slice().sort((a,b)=>b.monthReward-a.monthReward).slice(0,10);
+  rewardChart.data.labels = topR.map(r => r.name);
+  rewardChart.data.datasets[0].data = topR.map(r => r.monthReward);
+  rewardChart.data.datasets[0].backgroundColor = goldA;
+  rewardChart.update('none');
+
+  const cc = DATA.prices.ccUsd || 0, ceth = DATA.prices.cethUsd || 0;
+  const valued = active.map(r => ({ ...r, _usd: (r.cc*cc)+(r.usdcx)+(r.ceth*ceth), _ccU: r.cc*cc, _cethU: r.ceth*ceth }));
+  const topB = valued.sort((a,b)=>b._usd-a._usd).slice(0,10);
+  balanceChart.data.labels = topB.map(r => r.name);
+  balanceChart.data.datasets[0].data = topB.map(r => r._ccU);
+  balanceChart.data.datasets[1].data = topB.map(r => r.usdcx);
+  balanceChart.data.datasets[2].data = topB.map(r => r._cethU);
+  balanceChart.data.datasets[0].backgroundColor = goldA;
+  balanceChart.data.datasets[1].backgroundColor = c2;
+  balanceChart.data.datasets[2].backgroundColor = c3;
+  balanceChart.update('none');
+}
+
+// ── Status / VPS / Header ──────────────────────────────────────────────
+function renderStatus() {
+  const dot = $('#status-dot'), txt = $('#status-text');
+  if (DATA.botConnected) {
+    dot.className = 'dot live'; txt.textContent = 'Bot Online';
+  } else if (DATA.lastUpdate) {
+    dot.className = 'dot err'; txt.textContent = 'Bot Offline';
+  } else {
+    dot.className = 'dot idle'; txt.textContent = 'Waiting...';
+  }
+  $('#last-update').textContent = DATA.lastUpdate ? timeAgo(DATA.lastUpdate) : '—';
+}
+
+function formatUptime(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return `${h}h${String(m).padStart(2,'0')}m`;
+  return `${m}m`;
+}
+
+function renderVpsSources() {
+  const list = $('#vps-list');
+  const countEl = $('#vps-count');
+  const sources = Array.isArray(DATA.sources) ? DATA.sources.slice() : [];
+  sources.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+  const online = sources.filter(s => s.connected).length;
+  countEl.textContent = sources.length
+    ? `${online}/${sources.length} online · ${sources.reduce((n,s)=>n+(s.accounts||0),0)} akun`
+    : '';
+  if (!sources.length) {
+    list.innerHTML = '<div class="text-sm" style="color: var(--mute);">Belum ada VPS yang push data...</div>';
+  } else {
+    list.innerHTML = sources.map(s => {
+      const dotCls = s.connected ? 'live' : 'err';
+      const label = s.connected ? 'Online' : 'Offline';
+      const labelCol = s.connected ? 'var(--pos)' : 'var(--neg)';
+      const upStr = s.uptime ? formatUptime(s.uptime) : '—';
+      const lastStr = s.lastPush ? timeAgo(s.lastPush) : 'belum push';
+      return `
+        <div class="p-3 rounded-lg" style="background: var(--bg-soft); border: 1px solid var(--line);">
+          <div class="flex items-center gap-2">
+            <span class="dot ${dotCls}"></span>
+            <span class="font-mono text-sm font-semibold truncate" title="${escapeHtml(s.id)}">${escapeHtml(s.id)}</span>
+            <span class="ml-auto text-[11px] font-medium" style="color: ${labelCol};">${label}</span>
+          </div>
+          <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+            <div><div style="color: var(--mute);">Akun</div><div class="num font-semibold">${fmtInt(s.accounts || 0)}</div></div>
+            <div><div style="color: var(--mute);">Uptime</div><div class="font-semibold">${upStr}</div></div>
+            <div><div style="color: var(--mute);">Last push</div><div class="font-semibold">${lastStr}</div></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  const sel = $('#filter-vps');
+  if (sel) {
+    const ids = sources.map(s => s.id);
+    const current = FILTER_VPS;
+    const opts = ['<option value="all">Semua VPS</option>']
+      .concat(ids.map(id => `<option value="${escapeHtml(id)}">${escapeHtml(id)}</option>`))
+      .join('');
+    if (sel.dataset.signature !== ids.join('|')) {
+      sel.innerHTML = opts;
+      sel.dataset.signature = ids.join('|');
+      sel.value = ids.includes(current) ? current : 'all';
+      if (sel.value !== current) FILTER_VPS = sel.value;
+    }
+  }
+}
+
+function renderAll() {
+  renderStatus();
+  renderSummary();
+  renderVpsSources();
+  renderTable();
+  renderCharts();
+}
+
+// ── Polling (Vercel serverless — no SSE) ────────────────────────────────
+const POLL_INTERVAL_MS = 10_000; // poll every 10 seconds
+let pollTimer = null;
+let pollErrors = 0;
+
+async function fetchSnapshot() {
+  try {
+    const r = await fetch('/api/summary');
+    if (r.status === 401) {
+      // Auth required — browser will show native login dialog on page reload
+      toast('🔒 Login diperlukan', 'warn');
+      return null;
+    }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    pollErrors = 0;
+    return await r.json();
+  } catch (err) {
+    pollErrors++;
+    if (pollErrors <= 3 || pollErrors % 10 === 0) {
+      console.warn(`[poll] Error #${pollErrors}:`, err.message);
+    }
+    return null;
+  }
+}
+
+async function pollOnce() {
+  const s = await fetchSnapshot();
+  if (s) {
+    DATA = { ...DATA, ...s };
+    renderAll();
+  }
+}
+
+function startPolling() {
+  // Initial fetch
+  pollOnce();
+  // Recurring poll
+  pollTimer = setInterval(pollOnce, POLL_INTERVAL_MS);
+}
+
+// ── Wiring ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  initTheme();
+  initCharts();
+  await ensureFx();
+  startPolling();
+
+  $('#search').addEventListener('input', (e) => { FILTER_TEXT = e.target.value; renderTable(); });
+  $('#filter-status').addEventListener('change', (e) => { FILTER_STATUS = e.target.value; renderTable(); });
+  $('#filter-vps').addEventListener('change', (e) => { FILTER_VPS = e.target.value; renderTable(); });
+
+  // Switch hero view — klik salah satu switch card untuk pindah ke hero
+  ['btn-switch-1', 'btn-switch-2'].forEach(id => {
+    document.getElementById(id).addEventListener('click', (e) => {
+      const v = e.currentTarget.dataset.view;
+      if (!v || !VIEW_ORDER.includes(v)) return;
+      HERO_VIEW = v;
+      localStorage.setItem('c8.heroView', HERO_VIEW);
+      renderSummary();
+    });
+  });
+
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.key;
+      if (SORT.key === k) SORT.dir = SORT.dir === 'asc' ? 'desc' : 'asc';
+      else { SORT.key = k; SORT.dir = ['name','status'].includes(k) ? 'asc' : 'desc'; }
+      renderTable();
+    });
+  });
+
+  $('#btn-export').addEventListener('click', () => {
+    const headers = ['Name','Status','CC','USDCx','cETH','TotalUSD','TotalIDR','MonthReward','Delta','MonthVolume','MonthTxns','Rank','TotalReward','ClaimedReward','PendingReward','BotStatus','TotalSwaps','Error'];
+    const rows = DATA.results.map(r => {
+      const u = computeUsd(r); const i = fxToIdr(u);
+      return [r.name, r.status, r.cc, r.usdcx, r.ceth, u.toFixed(2), i!=null?Math.round(i):'', r.monthReward, r.delta, r.monthVolume, r.monthTxns, r.rank, r.totalReward, r.claimedReward, r.pendingReward, r.botStatus, r.totalSwaps, r.error].map(v => v==null?'':String(v).replace(/"/g,'""')).map(v=>`"${v}"`).join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `c8-portfolio-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('CSV diexport', 'ok');
+  });
+
+  // refresh time ago every 10s
+  setInterval(() => {
+    renderStatus();
+  }, 10_000);
+  // refresh FX every 30m
+  setInterval(async () => {
+    await ensureFx();
+    renderSummary();
+    renderTable();
+  }, 30 * 60 * 1000);
+});
+</script>
+</body>
+</html>
