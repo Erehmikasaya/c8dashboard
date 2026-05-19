@@ -167,7 +167,48 @@
   .spark { display: block; width: 100%; height: 36px; }
 
   /* status indicator inline */
+  /* status indicator inline */
   .ind-row { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+
+  /* Tab buttons */
+  .tab-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; font-size: 12.5px; font-weight: 600;
+    border-radius: 8px; border: none; cursor: pointer;
+    background: transparent; color: var(--mute);
+    transition: all 0.2s ease;
+  }
+  .tab-btn:hover { color: var(--text-2); background: var(--bg-soft); }
+  .tab-btn.active {
+    background: var(--bg-card-2); color: var(--accent);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    border: 1px solid var(--line-strong);
+  }
+
+  /* Bot status badges */
+  .bot-status {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; font-size: 11px; font-weight: 500;
+    border-radius: 6px; letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .bot-status.ok { color: var(--pos); background: color-mix(in srgb, var(--pos) 10%, transparent); }
+  .bot-status.stuck { color: #f97316; background: color-mix(in srgb, #f97316 10%, transparent); animation: blink 1.5s infinite; }
+  .bot-status.landing { color: #a78bfa; background: color-mix(in srgb, #a78bfa 10%, transparent); }
+  .bot-status.cooldown { color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+  .bot-status.swapping { color: #38bdf8; background: color-mix(in srgb, #38bdf8 10%, transparent); }
+  .bot-status.error { color: var(--neg); background: color-mix(in srgb, var(--neg) 10%, transparent); }
+  .bot-status.idle { color: var(--mute); background: var(--bg-soft); }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  /* Log lines */
+  .log-line { font-size: 11px; font-family: 'JetBrains Mono', monospace; line-height: 1.6; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 500px; }
+  .log-line:hover { white-space: normal; max-width: none; }
+
+  /* Direction arrow */
+  .dir-arrow { font-size: 14px; font-weight: 700; }
+  .dir-cc2u { color: #38bdf8; }
+  .dir-u2cc { color: #4ade80; }
 </style>
 </head>
 
@@ -435,13 +476,20 @@
   </section>
 
   <!-- ───────────────────────────────────────────────────────────── -->
-  <!-- Table                                                          -->
+  <!-- Table (Tabbed: Account Ledger | Activity & Logs)             -->
   <!-- ───────────────────────────────────────────────────────────── -->
   <section class="surface overflow-hidden">
     <div class="p-5 flex flex-wrap items-center gap-3" style="border-bottom: 1px solid var(--line);">
-      <div>
-        <div class="display text-[15px] font-bold">Account Ledger</div>
-        <div class="text-[11px]" style="color: var(--mute);">Detail per akun · sortable</div>
+      <!-- Tab buttons -->
+      <div class="flex items-center gap-1 p-0.5 rounded-lg" style="background: var(--bg-soft); border: 1px solid var(--line);">
+        <button id="tab-ledger" class="tab-btn active" onclick="switchTab('ledger')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          Account Ledger
+        </button>
+        <button id="tab-activity" class="tab-btn" onclick="switchTab('activity')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Activity & Logs
+        </button>
       </div>
       <div class="ml-auto flex items-center gap-2 flex-wrap">
         <input id="search" type="text" placeholder="Cari akun / error..." class="input w-56" />
@@ -457,28 +505,55 @@
         </select>
       </div>
     </div>
-    <div class="overflow-x-auto max-h-[640px] overflow-y-auto">
-      <table>
-        <thead>
-          <tr>
-            <th class="sortable text-left" data-key="name">Akun <span class="sort-arrow">↕</span></th>
-            <th class="text-left">Status</th>
-            <th class="sortable text-right" data-key="cc">CC <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="usdcx">USDCx <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="ceth">cETH <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="_usd">Total $ <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="monthReward">Reward <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="delta">Δ <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="monthVolume">Volume $ <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="monthTxns">Swaps <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="rank">Rank <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="claimedReward">Claimed <span class="sort-arrow">↕</span></th>
-            <th class="sortable text-right" data-key="pendingReward">Pending <span class="sort-arrow">↕</span></th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
+
+    <!-- TAB 1: Account Ledger -->
+    <div id="panel-ledger">
+      <div class="overflow-x-auto max-h-[640px] overflow-y-auto">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable text-left" data-key="name">Akun <span class="sort-arrow">↕</span></th>
+              <th class="text-left">Status</th>
+              <th class="sortable text-right" data-key="cc">CC <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="usdcx">USDCx <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="ceth">cETH <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="_usd">Total $ <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="monthReward">Reward <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="delta">Δ <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="monthVolume">Volume $ <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="monthTxns">Swaps <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="rank">Rank <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="rewardPerTx">Rew/TX <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="claimedReward">Claimed <span class="sort-arrow">↕</span></th>
+              <th class="sortable text-right" data-key="pendingReward">Pending <span class="sort-arrow">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
     </div>
+
+    <!-- TAB 2: Activity & Logs -->
+    <div id="panel-activity" style="display: none;">
+      <div class="overflow-x-auto max-h-[640px] overflow-y-auto">
+        <table>
+          <thead>
+            <tr>
+              <th class="text-left">Akun</th>
+              <th class="text-left">Bot Status</th>
+              <th class="text-center">Direction</th>
+              <th class="text-right">CC→U</th>
+              <th class="text-right">U→CC</th>
+              <th class="text-right">Total</th>
+              <th class="text-right">Rew/TX</th>
+              <th class="text-left" style="min-width:380px;">Recent Activity</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-activity"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="px-5 py-3 flex items-center justify-between text-[11px]" style="color: var(--mute); border-top: 1px solid var(--line);">
       <span>Showing <span id="row-count" class="num">0</span> akun</span>
       <span id="prices-info" class="num">—</span>
@@ -627,14 +702,14 @@ function rowHTML(r) {
     return `<tr class="row-error" data-name="${escapeHtml(r.name)}">
       <td class="font-medium">${escapeHtml(r.name)}</td>
       <td>${statusChip('error')}</td>
-      <td colspan="11" class="text-xs" style="color: var(--neg);" title="${escapeHtml(r.error||'unknown')}">${escapeHtml(r.error||'unknown')}</td>
+      <td colspan="12" class="text-xs" style="color: var(--neg);" title="${escapeHtml(r.error||'unknown')}">${escapeHtml(r.error||'unknown')}</td>
     </tr>`;
   }
   if (r.status === 'pending' || r.status === 'idle') {
     return `<tr data-name="${escapeHtml(r.name)}">
       <td class="font-medium">${escapeHtml(r.name)}</td>
       <td>${statusChip(r.status)}</td>
-      <td colspan="11" class="text-xs" style="color: var(--mute);">menunggu...</td>
+      <td colspan="12" class="text-xs" style="color: var(--mute);">menunggu...</td>
     </tr>`;
   }
   const delta = r.delta;
@@ -646,6 +721,7 @@ function rowHTML(r) {
   const usd = computeUsd(r);
   const idr = fxToIdr(usd);
   const usdCell = `<span class="num font-semibold gold">${fmtUSD(usd)}</span>${idr!=null ? `<div class="text-[10.5px] num" style="color: var(--mute);">${fmtIDR(idr)}</div>` : ''}`;
+  const rpt = r.rewardPerTx || (r.monthTxns > 0 ? r.monthReward / r.monthTxns : 0);
   return `<tr data-name="${escapeHtml(r.name)}">
     <td class="font-medium">${escapeHtml(r.name)}</td>
     <td>${statusChip('ok')}</td>
@@ -658,20 +734,88 @@ function rowHTML(r) {
     <td class="text-right num">${fmt(r.monthVolume, 0)}</td>
     <td class="text-right num">${fmtInt(r.monthTxns)}</td>
     <td class="text-right">${rank}</td>
+    <td class="text-right num" style="color: var(--accent);">${fmt(rpt, 4)}</td>
     <td class="text-right num delta-pos">${fmt(r.claimedReward||0, 2)}</td>
     <td class="text-right num" style="color: var(--warn);">${fmt(r.pendingReward||0, 2)}</td>
   </tr>`;
 }
 
+// ── Bot status detection from botStatus string ──
+function getBotStatusBadge(bs) {
+  if (!bs || bs === 'idle') return '<span class="bot-status idle">💤 Idle</span>';
+  const s = bs.toLowerCase();
+  if (s.includes('stuck') || s.includes('sangkut')) return `<span class="bot-status stuck">⚠️ ${escapeHtml(bs)}</span>`;
+  if (s.includes('land') || s.includes('wait') || s.includes('polling')) return `<span class="bot-status landing">⏳ ${escapeHtml(bs)}</span>`;
+  if (s.includes('cooldown') || s.includes('rate') || s.includes('limit')) return `<span class="bot-status cooldown">⏱️ ${escapeHtml(bs)}</span>`;
+  if (s.includes('swap') || s.includes('step') || s.includes('quote')) return `<span class="bot-status swapping">🔄 ${escapeHtml(bs)}</span>`;
+  if (s.includes('error') || s.includes('fail')) return `<span class="bot-status error">❌ ${escapeHtml(bs)}</span>`;
+  if (s.includes('done') || s.includes('ok') || s.includes('ready')) return `<span class="bot-status ok">✅ ${escapeHtml(bs)}</span>`;
+  return `<span class="bot-status ok">${escapeHtml(bs)}</span>`;
+}
+
+function getDirectionArrow(dir) {
+  if (!dir) return '<span style="color:var(--mute);">—</span>';
+  const d = dir.toUpperCase();
+  if (d.includes('CC') && (d.includes('USDCX') || d.includes('U'))) {
+    return d.indexOf('CC') < d.indexOf('U') || d.indexOf('CC') < d.indexOf('USDCX')
+      ? '<span class="dir-arrow dir-cc2u">CC → U</span>'
+      : '<span class="dir-arrow dir-u2cc">U → CC</span>';
+  }
+  if (d.includes('CETH')) {
+    return d.indexOf('CC') < d.indexOf('CETH')
+      ? '<span class="dir-arrow dir-cc2u">CC → cE</span>'
+      : '<span class="dir-arrow dir-u2cc">cE → CC</span>';
+  }
+  return `<span class="dir-arrow" style="color:var(--text-2);">${escapeHtml(dir)}</span>`;
+}
+
+function activityRowHTML(r) {
+  const rpt = r.rewardPerTx || (r.monthTxns > 0 ? r.monthReward / r.monthTxns : 0);
+  const logs = (r.logs || []).map(l => {
+    // Strip timestamp prefix for cleaner display
+    const clean = l.replace(/^\d{2}:\d{2}:\d{2}\s*/, '');
+    return `<div class="log-line" title="${escapeHtml(l)}">${escapeHtml(clean)}</div>`;
+  }).join('');
+  return `<tr data-name="${escapeHtml(r.name)}">
+    <td class="font-medium">${escapeHtml(r.name)}</td>
+    <td>${getBotStatusBadge(r.botStatus)}</td>
+    <td class="text-center">${getDirectionArrow(r.lastSwapDir)}</td>
+    <td class="text-right num" style="color: #38bdf8;">${fmtInt(r.swapsCCtoU || 0)}</td>
+    <td class="text-right num" style="color: #4ade80;">${fmtInt(r.swapsUtCC || 0)}</td>
+    <td class="text-right num font-semibold">${fmtInt(r.totalSwaps || 0)}</td>
+    <td class="text-right num" style="color: var(--accent);">${fmt(rpt, 4)}</td>
+    <td>${logs || '<span style="color:var(--mute);">No logs</span>'}</td>
+  </tr>`;
+}
+
+// ── Tab switching ──
+let ACTIVE_TAB = 'ledger';
+function switchTab(tab) {
+  ACTIVE_TAB = tab;
+  document.getElementById('panel-ledger').style.display = tab === 'ledger' ? '' : 'none';
+  document.getElementById('panel-activity').style.display = tab === 'activity' ? '' : 'none';
+  document.getElementById('tab-ledger').classList.toggle('active', tab === 'ledger');
+  document.getElementById('tab-activity').classList.toggle('active', tab === 'activity');
+  if (tab === 'activity') renderActivity();
+}
+
+function renderActivity() {
+  const rows = getFiltered();
+  const el = document.getElementById('tbody-activity');
+  if (!el) return;
+  el.innerHTML = rows.map(activityRowHTML).join('') || `<tr><td colspan="8" class="px-3 py-8 text-center" style="color: var(--mute);">Tidak ada data</td></tr>`;
+}
+
 function renderTable() {
   const rows = sortRows(getFiltered());
-  $('#tbody').innerHTML = rows.map(rowHTML).join('') || `<tr><td colspan="13" class="px-3 py-8 text-center" style="color: var(--mute);">Tidak ada data</td></tr>`;
+  $('#tbody').innerHTML = rows.map(rowHTML).join('') || `<tr><td colspan="14" class="px-3 py-8 text-center" style="color: var(--mute);">Tidak ada data</td></tr>`;
   $('#row-count').textContent = rows.length;
-  document.querySelectorAll('th.sortable').forEach(th => {
+  document.querySelectorAll('#panel-ledger th.sortable').forEach(th => {
     th.classList.toggle('sort-active', th.dataset.key === SORT.key);
     const arrow = th.querySelector('.sort-arrow');
     if (arrow) arrow.textContent = th.dataset.key === SORT.key ? (SORT.dir === 'asc' ? '↑' : '↓') : '↕';
   });
+  if (ACTIVE_TAB === 'activity') renderActivity();
 }
 
 // ── Render: summary / hero ──────────────────────────────────────────────

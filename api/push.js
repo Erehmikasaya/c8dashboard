@@ -33,12 +33,15 @@ module.exports = async function handler(req, res) {
       totalReward: Number(a.totalReward) || 0,
       pendingReward: Number(a.pendingReward) || 0,
       claimedReward: Number(a.claimedReward) || 0,
+      rewardPerTx: Number(a.rewardPerTx) || 0,
       rank: Number(a.rank) || 0,
       status: String(a.status || 'idle').slice(0, 50),
       totalSwaps: Number(a.totalSwaps) || 0,
       diffReward: Number(a.diffReward) || 0,
       lastSwapDir: String(a.lastSwapDir || '').slice(0, 20),
-      logs: (a.logs || []).slice(-5).map(l => String(l).slice(0, 200)),
+      swapsCCtoU: Number(a.swapsCCtoU) || 0,
+      swapsUtCC: Number(a.swapsUtCC) || 0,
+      logs: (a.logs || []).slice(-8).map(l => String(l).slice(0, 250)),
       error: a.error ? String(a.error).slice(0, 200) : null,
     }));
 
