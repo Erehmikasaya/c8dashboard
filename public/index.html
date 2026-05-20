@@ -1463,9 +1463,9 @@ const MODAL_CONFIGS = {
       <div class="form-group">
         <label class="form-label">Action</label>
         <div class="grid grid-cols-3 gap-2 mt-1">
-          <button type="button" class="cmd-btn success" style="justify-content:center;width:100%;" onclick="selectBcAction('start')" id="bc-btn-start">▶ Start</button>
-          <button type="button" class="cmd-btn danger" style="justify-content:center;width:100%;" onclick="selectBcAction('stop')" id="bc-btn-stop">⏹ Stop</button>
-          <button type="button" class="cmd-btn" style="justify-content:center;width:100%;border-color:var(--accent);color:var(--accent);" onclick="selectBcAction('restart')" id="bc-btn-restart">🔄 Restart</button>
+          <button type="button" class="cmd-btn" style="justify-content:center;width:100%;" onclick="selectBcAction('start')" id="bc-btn-start">▶ Start</button>
+          <button type="button" class="cmd-btn" style="justify-content:center;width:100%;" onclick="selectBcAction('stop')" id="bc-btn-stop">⏹ Stop</button>
+          <button type="button" class="cmd-btn" style="justify-content:center;width:100%;" onclick="selectBcAction('restart')" id="bc-btn-restart">🔄 Restart</button>
         </div>
         <input type="hidden" id="bc-action" value="restart" />
         <div class="form-hint mt-2">Start = jalankan bot · Stop = hentikan bot · Restart = restart proses</div>
@@ -1701,7 +1701,16 @@ function selectBcAction(action) {
   document.getElementById('bc-action').value = action;
   ['start','stop','restart'].forEach(a => {
     const btn = document.getElementById('bc-btn-' + a);
-    if (btn) btn.style.outline = a === action ? '2px solid var(--accent)' : 'none';
+    if (!btn) return;
+    if (a === action) {
+      btn.style.borderColor = 'var(--accent)';
+      btn.style.color = 'var(--accent)';
+      btn.style.boxShadow = '0 0 12px color-mix(in srgb, var(--accent) 15%, transparent)';
+    } else {
+      btn.style.borderColor = '';
+      btn.style.color = '';
+      btn.style.boxShadow = '';
+    }
   });
 }
 
