@@ -212,6 +212,126 @@
   .dir-arrow { font-size: 14px; font-weight: 700; }
   .dir-cc2u { color: #38bdf8; }
   .dir-u2cc { color: #4ade80; }
+
+  /* ── Command Center ─────────────────────────────────── */
+  .cmd-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; border-radius: 12px;
+    border: 1px solid var(--line-strong);
+    background: linear-gradient(135deg, var(--bg-card-2) 0%, var(--bg-card) 100%);
+    color: var(--text-2); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .25s ease; white-space: nowrap;
+  }
+  .cmd-btn:hover {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 15%, var(--bg-card-2)) 0%, var(--bg-card) 100%);
+    color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    transform: translateY(-1px); box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+  .cmd-btn.danger:hover { color: var(--neg); border-color: color-mix(in srgb, var(--neg) 40%, transparent); box-shadow: 0 4px 12px color-mix(in srgb, var(--neg) 15%, transparent); }
+  .cmd-btn.success:hover { color: var(--pos); border-color: color-mix(in srgb, var(--pos) 40%, transparent); box-shadow: 0 4px 12px color-mix(in srgb, var(--pos) 15%, transparent); }
+
+  /* ── Modals ────────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+    z-index: 100; display: flex; align-items: center; justify-content: center;
+    padding: 20px; animation: fadeIn .2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-box {
+    background: var(--bg-card); border: 1px solid var(--line-strong);
+    border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5), var(--glow);
+    width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 16px 24px 20px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-title { font-family: Manrope, Inter, sans-serif; font-size: 18px; font-weight: 700; }
+  .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-soft); color: var(--mute); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+  .modal-close:hover { color: var(--neg); border-color: color-mix(in srgb, var(--neg) 30%, transparent); }
+
+  /* ── Forms ─────────────────────────────────────────── */
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--mute); margin-bottom: 6px; }
+  .form-input {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--line-strong); background: var(--bg-card-2);
+    color: var(--text); font-size: 13px; font-weight: 500;
+    outline: none; transition: border-color .2s; font-family: 'JetBrains Mono', monospace;
+  }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
+  .form-select {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--line-strong); background: var(--bg-card-2);
+    color: var(--text); font-size: 13px; cursor: pointer; outline: none;
+  }
+  .form-select:focus { border-color: var(--accent); }
+  .form-hint { font-size: 11px; color: var(--mute); margin-top: 4px; }
+
+  .btn-primary {
+    padding: 10px 24px; border-radius: 10px; border: none;
+    background: var(--grad-1); color: #0a0e1a;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .btn-cancel {
+    padding: 10px 20px; border-radius: 10px;
+    border: 1px solid var(--line-strong); background: var(--bg-card-2);
+    color: var(--text-2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+  }
+  .btn-cancel:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Command Log ──────────────────────────────────── */
+  .cmd-log {
+    background: var(--bg-elev); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px; max-height: 200px;
+    overflow-y: auto; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; line-height: 1.6;
+  }
+  .cmd-log-line { color: var(--text-2); }
+  .cmd-log-line.ok { color: var(--pos); }
+  .cmd-log-line.err { color: var(--neg); }
+  .cmd-log-line.info { color: var(--accent); }
+
+  /* ── VPS Control Buttons ─────────────────────────── */
+  .vps-ctrl-btn {
+    padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line);
+    background: transparent; color: var(--mute); font-size: 10px;
+    font-weight: 600; cursor: pointer; transition: all .2s;
+  }
+  .vps-ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .vps-ctrl-btn.stop:hover { border-color: var(--neg); color: var(--neg); }
+
+  /* ── Command History ─────────────────────────────── */
+  .cmd-history-item {
+    padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--bg-soft); transition: all .2s;
+  }
+  .cmd-history-item:hover { border-color: var(--line-strong); }
+  .cmd-status-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; text-transform: uppercase;
+  }
+  .cmd-status-badge.pending { color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+  .cmd-status-badge.running { color: #38bdf8; background: color-mix(in srgb, #38bdf8 10%, transparent); }
+  .cmd-status-badge.completed { color: var(--pos); background: color-mix(in srgb, var(--pos) 10%, transparent); }
+  .cmd-status-badge.failed { color: var(--neg); background: color-mix(in srgb, var(--neg) 10%, transparent); }
+
+  /* ── Mode Cards ──────────────────────────────────── */
+  .mode-card {
+    padding: 12px 16px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--bg-soft);
+    cursor: pointer; transition: all .2s;
+  }
+  .mode-card:hover { border-color: var(--accent); }
+  .mode-card.selected {
+    border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .mode-card input[type="radio"] { accent-color: var(--accent); }
 </style>
 </head>
 
@@ -478,6 +598,61 @@
       <div class="text-sm" style="color: var(--mute);">Belum ada VPS yang push data...</div>
     </div>
   </section>
+
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <!-- Command Center                                                -->
+  <!-- ───────────────────────────────────────────────────────────── -->
+  <section class="surface p-5">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="display text-[15px] font-bold">⚡ Command Center</div>
+      <span class="text-[11px]" style="color: var(--mute);">Send commands to VPS bots</span>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button class="cmd-btn" onclick="openModal('withdraw')">💸 Withdraw</button>
+      <button class="cmd-btn success" onclick="openModal('bot-control')">🤖 Bot Control</button>
+      <button class="cmd-btn" onclick="openModal('run-mode')">🔄 Run Mode</button>
+      <button class="cmd-btn" onclick="openModal('config-change')">⚙️ Swap Config</button>
+      <button class="cmd-btn" onclick="openModal('consolidate')">📦 Consolidate</button>
+      <button class="cmd-btn" onclick="openModal('check-stuck')">🔍 Stuck Orders</button>
+      <button class="cmd-btn" onclick="openModal('check-balance')">💰 Check Balance</button>
+    </div>
+    <div id="cmd-history" class="mt-4" style="display:none;">
+      <div class="text-[11px] font-semibold uppercase tracking-wider mb-2" style="color: var(--mute);">Recent Commands</div>
+      <div id="cmd-history-list" class="space-y-2"></div>
+    </div>
+  </section>
+
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" class="modal-overlay" style="display:none;" onclick="closeModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-title">—</div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" id="modal-submit" onclick="submitModal()">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Modal -->
+  <div id="progress-overlay" class="modal-overlay" style="display:none;" onclick="closeProgress()">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title" id="progress-title">⏳ Processing...</div>
+        <button class="modal-close" onclick="closeProgress()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="progress-status" class="text-sm mb-3" style="color: var(--text-2);">Sending command to VPS...</div>
+        <div id="progress-log" class="cmd-log"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeProgress()">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ───────────────────────────────────────────────────────────── -->
   <!-- Table (Tabbed: Account Ledger | Activity & Logs)             -->
@@ -1063,6 +1238,11 @@ function renderVpsSources() {
             <div><div style="color: var(--mute);">Uptime</div><div class="font-semibold">${upStr}</div></div>
             <div><div style="color: var(--mute);">Last push</div><div class="font-semibold">${lastStr}</div></div>
           </div>
+          <div class="mt-2 pt-2 flex gap-1" style="border-top: 1px solid var(--line);">
+            <button class="vps-ctrl-btn" onclick="event.stopPropagation();vpsAction('start','${escapeHtml(s.id)}')" title="Start bot">▶ Start</button>
+            <button class="vps-ctrl-btn stop" onclick="event.stopPropagation();vpsAction('stop','${escapeHtml(s.id)}')" title="Stop bot">⏹ Stop</button>
+            <button class="vps-ctrl-btn" onclick="event.stopPropagation();vpsAction('restart','${escapeHtml(s.id)}')" title="Restart bot">🔄 Restart</button>
+          </div>
         </div>`;
     }).join('');
   }
@@ -1189,6 +1369,472 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderTable();
   }, 30 * 60 * 1000);
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// ── Command Center ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+let CURRENT_MODAL = null;
+let CURRENT_CMD_ID = null;
+let cmdPollTimer = null;
+
+function getVpsOptions() {
+  const sources = Array.isArray(DATA.sources) ? DATA.sources : [];
+  let html = '<option value="all">🌐 Semua VPS</option>';
+  sources.forEach(s => {
+    html += `<option value="${escapeHtml(s.id)}">${escapeHtml(s.id)} ${s.connected ? '🟢' : '🔴'}</option>`;
+  });
+  return html;
+}
+
+function getWalletOptions() {
+  const count = DATA.accountCount || DATA.results.length || 0;
+  let html = '<option value="all">Semua Wallet</option>';
+  for (let i = 1; i <= Math.max(count, 1); i++) {
+    const name = DATA.results[i-1]?.name || `Acc ${i}`;
+    html += `<option value="${i}">${escapeHtml(name)}</option>`;
+  }
+  return html;
+}
+
+const MODAL_CONFIGS = {
+  'withdraw': {
+    title: '💸 Withdraw / Send',
+    body: () => `
+      <div class="form-group">
+        <label class="form-label">Target Address (Party ID)</label>
+        <input type="text" id="wd-address" class="form-input" placeholder="Cantex::1220... atau alamat eksternal" />
+        <div class="form-hint">Cantor8 Party ID atau alamat eksternal</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Memo (Optional)</label>
+        <input type="text" id="wd-memo" class="form-input" placeholder="Opsional" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-group">
+          <label class="form-label">Token</label>
+          <select id="wd-token" class="form-select">
+            <option value="cc">CC (Amulet)</option>
+            <option value="usdcx">USDCx</option>
+            <option value="ceth">cETH</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount</label>
+          <input type="text" id="wd-amount" class="form-input" placeholder="100 atau max" />
+          <div class="form-hint">Ketik "max" untuk kirim semua (sisakan reserve)</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-group">
+          <label class="form-label">Target VPS</label>
+          <select id="wd-vps" class="form-select">${getVpsOptions()}</select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Wallet</label>
+          <select id="wd-wallet" class="form-select" multiple style="min-height:80px;">${getWalletOptions()}</select>
+          <div class="form-hint">Ctrl+click untuk pilih &gt; 1</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reserve (keep per wallet)</label>
+        <input type="number" id="wd-reserve" class="form-input" value="0.5" step="0.1" />
+      </div>
+    `,
+    submit: '💸 Send Withdraw',
+    collect: () => ({
+      address: document.getElementById('wd-address')?.value?.trim(),
+      memo: document.getElementById('wd-memo')?.value?.trim(),
+      token: document.getElementById('wd-token')?.value,
+      amount: document.getElementById('wd-amount')?.value?.trim(),
+      reserve: parseFloat(document.getElementById('wd-reserve')?.value) || 0.5,
+    }),
+    getVps: () => document.getElementById('wd-vps')?.value,
+    getWallets: () => [...(document.getElementById('wd-wallet')?.selectedOptions || [])].map(o => o.value),
+    validate: (p) => { if (!p.address) return 'Target address wajib diisi'; if (!p.amount) return 'Amount wajib diisi'; return null; },
+  },
+
+  'bot-control': {
+    title: '🤖 Bot Control — Start / Stop / Restart',
+    body: () => `
+      <div class="form-group">
+        <label class="form-label">Target VPS</label>
+        <select id="bc-vps" class="form-select">${getVpsOptions()}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Action</label>
+        <div class="grid grid-cols-3 gap-2 mt-1">
+          <button type="button" class="cmd-btn success" style="justify-content:center;width:100%;" onclick="selectBcAction('start')" id="bc-btn-start">▶ Start</button>
+          <button type="button" class="cmd-btn danger" style="justify-content:center;width:100%;" onclick="selectBcAction('stop')" id="bc-btn-stop">⏹ Stop</button>
+          <button type="button" class="cmd-btn" style="justify-content:center;width:100%;border-color:var(--accent);color:var(--accent);" onclick="selectBcAction('restart')" id="bc-btn-restart">🔄 Restart</button>
+        </div>
+        <input type="hidden" id="bc-action" value="restart" />
+        <div class="form-hint mt-2">Start = jalankan bot · Stop = hentikan bot · Restart = restart proses</div>
+      </div>
+    `,
+    submit: '🤖 Execute',
+    collect: () => ({ action: document.getElementById('bc-action')?.value || 'restart' }),
+    getVps: () => document.getElementById('bc-vps')?.value,
+    getWallets: () => [],
+    validate: (p) => { if (!p.action) return 'Pilih action'; return null; },
+  },
+
+  'run-mode': {
+    title: '🔄 Run Mode — Pilih Mode Swap',
+    body: () => `
+      <div class="form-group">
+        <label class="form-label">Target VPS</label>
+        <select id="rm-vps" class="form-select">${getVpsOptions()}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pilih Mode</label>
+        <div class="space-y-2 mt-1">
+          ${[
+            { id:1, name:'CC ↔ USDCx Ping-Pong', desc:'2TX/window, cooldown per TX', col:'var(--pos)' },
+            { id:2, name:'CC ↔ CETH Ping-Pong', desc:'2TX/window, cooldown per TX', col:'var(--pos)' },
+            { id:3, name:'Triangular', desc:'CC→USDCx→CETH→CC, 3TX per cycle', col:'#38bdf8' },
+            { id:4, name:'Extended', desc:'Multi-batch cycle, configurable schedule', col:'#38bdf8' },
+            { id:5, name:'Consolidate', desc:'USDCx+CETH → CC, auto stop', col:'var(--warn)' },
+            { id:6, name:'Smart Consol', desc:'Detect+topup→CC, auto stop', col:'var(--warn)' },
+            { id:7, name:'Stuck Order', desc:'Cek order sangkut, auto stop', col:'#c084fc' },
+          ].map(m => `
+            <label class="mode-card flex items-center gap-3 ${m.id===4?'selected':''}" onclick="selectMode(${m.id})" id="mode-card-${m.id}">
+              <input type="radio" name="run-mode" value="${m.id}" ${m.id===4?'checked':''} />
+              <div>
+                <div class="text-sm font-semibold" style="color: ${m.col};">${m.id}. ${m.name}</div>
+                <div class="text-[11px]" style="color: var(--mute);">${m.desc}</div>
+              </div>
+            </label>`).join('')}
+        </div>
+      </div>
+    `,
+    submit: '🔄 Set Mode',
+    collect: () => ({ mode: parseInt(document.querySelector('input[name="run-mode"]:checked')?.value) || 4 }),
+    getVps: () => document.getElementById('rm-vps')?.value,
+    getWallets: () => [],
+    validate: () => null,
+  },
+
+  'config-change': {
+    title: '⚙️ Swap Configuration',
+    body: () => `
+      <div class="form-group">
+        <label class="form-label">Target VPS</label>
+        <select id="cfg-vps" class="form-select">${getVpsOptions()}</select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-group">
+          <label class="form-label">Min Swap Amount (CC)</label>
+          <input type="number" id="cfg-min" class="form-input" value="25" step="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">CC Reserve</label>
+          <input type="number" id="cfg-res" class="form-input" value="0.1" step="0.1" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-group">
+          <label class="form-label">Auto-Land Threshold (CC)</label>
+          <input type="number" id="cfg-thr" class="form-input" value="25" step="1" />
+          <div class="form-hint">waiting_balance_threshold</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">TX per Cycle</label>
+          <input type="number" id="cfg-tpc" class="form-input" value="3" step="1" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-group">
+          <label class="form-label">Rate Limit Wait (sec)</label>
+          <input type="number" id="cfg-rl" class="form-input" value="3600" step="60" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cooldown (sec)</label>
+          <input type="number" id="cfg-cd" class="form-input" value="0" step="60" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Dynamic Min Swap</label>
+        <div class="flex items-center gap-3 mt-1">
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" id="cfg-dyn" checked /> <span>Enabled</span></label>
+          <div class="flex items-center gap-2"><span class="text-xs" style="color: var(--mute);">Extra CC:</span>
+            <input type="number" id="cfg-dynex" class="form-input" style="width:80px;" value="2.5" step="0.5" />
+          </div>
+        </div>
+      </div>
+    `,
+    submit: '⚙️ Update Config',
+    collect: () => ({
+      minAmount: parseFloat($('#cfg-min')?.value), reserve: parseFloat($('#cfg-res')?.value),
+      threshold: parseFloat($('#cfg-thr')?.value), txPerCycle: parseInt($('#cfg-tpc')?.value),
+      rlWait: parseInt($('#cfg-rl')?.value), cooldown: parseInt($('#cfg-cd')?.value),
+      dynamicEnabled: $('#cfg-dyn')?.checked, dynamicExtra: parseFloat($('#cfg-dynex')?.value),
+    }),
+    getVps: () => document.getElementById('cfg-vps')?.value,
+    getWallets: () => [],
+    validate: () => null,
+  },
+
+  'consolidate': {
+    title: '📦 Consolidate — USDCx + CETH → CC',
+    body: () => `
+      <div class="p-4 rounded-lg mb-4" style="background: color-mix(in srgb, var(--warn) 8%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 20%, transparent);">
+        <div class="text-sm font-semibold" style="color: var(--warn);">⚠️ Consolidate akan swap semua USDCx dan CETH kembali ke CC</div>
+        <div class="text-xs mt-1" style="color: var(--text-2);">Sama seperti Mode 5 di bot. Proses butuh beberapa menit per wallet.</div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-group">
+          <label class="form-label">Target VPS</label>
+          <select id="cons-vps" class="form-select">${getVpsOptions()}</select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Wallet</label>
+          <select id="cons-wallet" class="form-select" multiple style="min-height:80px;">${getWalletOptions()}</select>
+          <div class="form-hint">Kosong = semua wallet</div>
+        </div>
+      </div>
+    `,
+    submit: '📦 Start Consolidate',
+    collect: () => ({}),
+    getVps: () => document.getElementById('cons-vps')?.value,
+    getWallets: () => [...(document.getElementById('cons-wallet')?.selectedOptions || [])].map(o => o.value),
+    validate: () => null,
+  },
+
+  'check-stuck': {
+    title: '🔍 Check & Resolve Stuck Orders',
+    body: () => `
+      <div class="p-4 rounded-lg mb-4" style="background: color-mix(in srgb, #fb923c 8%, transparent); border: 1px solid color-mix(in srgb, #fb923c 20%, transparent);">
+        <div class="text-sm font-semibold" style="color: #fb923c;">🔍 Cek dan resolve order yang stuck/sangkut</div>
+        <div class="text-xs mt-1" style="color: var(--text-2);">Cancel active orders, accept pending offers, tunggu balance settle.</div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-group">
+          <label class="form-label">Target VPS</label>
+          <select id="stuck-vps" class="form-select">${getVpsOptions()}</select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Wallet</label>
+          <select id="stuck-wallet" class="form-select" multiple style="min-height:80px;">${getWalletOptions()}</select>
+          <div class="form-hint">Kosong = semua wallet</div>
+        </div>
+      </div>
+    `,
+    submit: '🔍 Check Orders',
+    collect: () => ({}),
+    getVps: () => document.getElementById('stuck-vps')?.value,
+    getWallets: () => [...(document.getElementById('stuck-wallet')?.selectedOptions || [])].map(o => o.value),
+    validate: () => null,
+  },
+
+  'check-balance': {
+    title: '💰 Check Balance',
+    body: () => {
+      const rows = DATA.results || [];
+      if (!rows.length) return '<div class="text-sm" style="color: var(--mute);">No data. Tunggu VPS push data.</div>';
+      let html = '<div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr>';
+      html += '<th class="text-left py-2 px-2" style="color: var(--mute);">Wallet</th>';
+      html += '<th class="text-right py-2 px-2" style="color: var(--mute);">CC</th>';
+      html += '<th class="text-right py-2 px-2" style="color: var(--mute);">USDCx</th>';
+      html += '<th class="text-right py-2 px-2" style="color: var(--mute);">cETH</th>';
+      html += '<th class="text-right py-2 px-2" style="color: var(--mute);">Total $</th>';
+      html += '<th class="text-left py-2 px-2" style="color: var(--mute);">VPS</th></tr></thead><tbody>';
+      let tCC=0,tU=0,tE=0,tD=0;
+      rows.forEach(r => {
+        if (r.status !== 'ok') return;
+        const u = (r.cc||0)*(DATA.prices?.ccUsd||0) + (r.usdcx||0) + (r.ceth||0)*(DATA.prices?.cethUsd||0);
+        tCC+=r.cc||0; tU+=r.usdcx||0; tE+=r.ceth||0; tD+=u;
+        html += `<tr style="border-top:1px solid var(--line);">`;
+        html += `<td class="py-2 px-2 font-medium">${escapeHtml(r.name)}</td>`;
+        html += `<td class="py-2 px-2 text-right num">${fmt(r.cc||0,2)}</td>`;
+        html += `<td class="py-2 px-2 text-right num">${fmt(r.usdcx||0,4)}</td>`;
+        html += `<td class="py-2 px-2 text-right num">${fmt(r.ceth||0,6)}</td>`;
+        html += `<td class="py-2 px-2 text-right num gold">${fmtUSD(u)}</td>`;
+        html += `<td class="py-2 px-2 text-xs" style="color:var(--mute);">${escapeHtml(r.vpsId||'')}</td></tr>`;
+      });
+      html += `<tr style="border-top:2px solid var(--line-strong);">`;
+      html += `<td class="py-2 px-2 font-bold">TOTAL</td>`;
+      html += `<td class="py-2 px-2 text-right num font-bold">${fmt(tCC,2)}</td>`;
+      html += `<td class="py-2 px-2 text-right num font-bold">${fmt(tU,4)}</td>`;
+      html += `<td class="py-2 px-2 text-right num font-bold">${fmt(tE,6)}</td>`;
+      html += `<td class="py-2 px-2 text-right num font-bold gold">${fmtUSD(tD)}</td>`;
+      html += `<td></td></tr></tbody></table></div>`;
+      return html;
+    },
+    submit: null,
+    collect: () => ({}),
+    getVps: () => 'all',
+    getWallets: () => [],
+    validate: () => null,
+  },
+};
+
+function openModal(type) {
+  const cfg = MODAL_CONFIGS[type];
+  if (!cfg) return;
+  CURRENT_MODAL = type;
+  document.getElementById('modal-title').innerHTML = cfg.title;
+  document.getElementById('modal-body').innerHTML = cfg.body();
+  const footer = document.getElementById('modal-footer');
+  if (cfg.submit) {
+    footer.style.display = '';
+    document.getElementById('modal-submit').textContent = cfg.submit;
+  } else {
+    footer.style.display = 'none';
+  }
+  document.getElementById('modal-overlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+  CURRENT_MODAL = null;
+}
+
+function selectMode(id) {
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('mode-card-' + id);
+  if (card) { card.classList.add('selected'); const r = card.querySelector('input[type="radio"]'); if (r) r.checked = true; }
+}
+
+function selectBcAction(action) {
+  document.getElementById('bc-action').value = action;
+  ['start','stop','restart'].forEach(a => {
+    const btn = document.getElementById('bc-btn-' + a);
+    if (btn) btn.style.outline = a === action ? '2px solid var(--accent)' : 'none';
+  });
+}
+
+async function submitModal() {
+  const cfg = MODAL_CONFIGS[CURRENT_MODAL];
+  if (!cfg) return;
+  const params = cfg.collect();
+  const err = cfg.validate ? cfg.validate(params) : null;
+  if (err) { toast(err, 'err'); return; }
+  const targetVps = cfg.getVps ? cfg.getVps() : 'all';
+  const targetWallets = (cfg.getWallets ? cfg.getWallets() : []).filter(w => w !== 'all');
+  const submitBtn = document.getElementById('modal-submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Sending...';
+  try {
+    const resp = await fetch('/api/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: CURRENT_MODAL, params, targetVps, targetWallets }),
+    });
+    if (resp.status === 401) { toast('🔒 Login diperlukan', 'warn'); return; }
+    const data = await resp.json();
+    if (!resp.ok) { toast(data.error || 'Failed', 'err'); return; }
+    closeModal();
+    CURRENT_CMD_ID = data.command?.id;
+    showProgress(data.command);
+    toast('✅ Command sent: ' + CURRENT_MODAL, 'ok');
+    startCmdPolling(CURRENT_CMD_ID);
+    loadCommandHistory();
+  } catch (e) {
+    toast('Network error: ' + e.message, 'err');
+  } finally {
+    submitBtn.disabled = false;
+    if (cfg.submit) submitBtn.textContent = cfg.submit;
+  }
+}
+
+function showProgress(cmd) {
+  document.getElementById('progress-title').innerHTML = `⏳ ${cmd.type} — ${cmd.status}`;
+  document.getElementById('progress-status').textContent = `Command: ${cmd.type} | VPS: ${cmd.targetVps} | Status: ${cmd.status}`;
+  document.getElementById('progress-log').innerHTML = '<div class="cmd-log-line info">Command submitted, waiting for VPS to pick up...</div>';
+  document.getElementById('progress-overlay').style.display = 'flex';
+}
+
+function closeProgress() {
+  document.getElementById('progress-overlay').style.display = 'none';
+  if (cmdPollTimer) { clearInterval(cmdPollTimer); cmdPollTimer = null; }
+}
+
+function startCmdPolling(cmdId) {
+  if (cmdPollTimer) clearInterval(cmdPollTimer);
+  cmdPollTimer = setInterval(async () => {
+    try {
+      const resp = await fetch(`/api/command?id=${encodeURIComponent(cmdId)}`);
+      if (!resp.ok) return;
+      const cmd = await resp.json();
+      const ico = { pending:'⏳', running:'🔄', completed:'✅', failed:'❌' };
+      document.getElementById('progress-title').innerHTML = `${ico[cmd.status]||'⏳'} ${cmd.type} — ${cmd.status}`;
+      document.getElementById('progress-status').textContent = `Command: ${cmd.type} | VPS: ${cmd.targetVps} | Status: ${cmd.status}`;
+      if (cmd.progress && cmd.progress.length) {
+        document.getElementById('progress-log').innerHTML = cmd.progress.map(p => {
+          const cls = p.msg.includes('✅') ? 'ok' : p.msg.includes('❌') ? 'err' : '';
+          return `<div class="cmd-log-line ${cls}">${escapeHtml(p.msg)}</div>`;
+        }).join('');
+        const el = document.getElementById('progress-log');
+        el.scrollTop = el.scrollHeight;
+      }
+      if (cmd.status === 'completed' || cmd.status === 'failed') {
+        clearInterval(cmdPollTimer); cmdPollTimer = null;
+        loadCommandHistory();
+      }
+    } catch {}
+  }, 3000);
+}
+
+async function loadCommandHistory() {
+  try {
+    const resp = await fetch('/api/command?action=list');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const cmds = data.commands || [];
+    const container = document.getElementById('cmd-history');
+    const list = document.getElementById('cmd-history-list');
+    if (!cmds.length) { container.style.display = 'none'; return; }
+    container.style.display = '';
+    const ico = { 'withdraw':'💸','bot-control':'🤖','config-change':'⚙️','run-mode':'🔄','consolidate':'📦','check-stuck':'🔍','check-balance':'💰' };
+    list.innerHTML = cmds.slice(0,8).map(cmd => `
+      <div class="cmd-history-item flex items-center gap-3 cursor-pointer" onclick="viewCommand('${cmd.id}')">
+        <span class="text-lg">${ico[cmd.type]||'📋'}</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium truncate">${escapeHtml(cmd.type)} → ${escapeHtml(cmd.targetVps)}</div>
+          <div class="text-[11px]" style="color: var(--mute);">${cmd.createdAt ? timeAgo(cmd.createdAt) : ''}</div>
+        </div>
+        <span class="cmd-status-badge ${cmd.status}">${cmd.status}</span>
+      </div>`).join('');
+  } catch {}
+}
+
+async function viewCommand(cmdId) {
+  try {
+    const resp = await fetch(`/api/command?id=${encodeURIComponent(cmdId)}`);
+    if (!resp.ok) return;
+    const cmd = await resp.json();
+    showProgress(cmd);
+    const ico = { pending:'⏳', running:'🔄', completed:'✅', failed:'❌' };
+    document.getElementById('progress-title').innerHTML = `${ico[cmd.status]||'⏳'} ${cmd.type} — ${cmd.status}`;
+    if (cmd.progress && cmd.progress.length) {
+      document.getElementById('progress-log').innerHTML = cmd.progress.map(p => {
+        const cls = p.msg.includes('✅') ? 'ok' : p.msg.includes('❌') ? 'err' : '';
+        return `<div class="cmd-log-line ${cls}">${escapeHtml(p.msg)}</div>`;
+      }).join('');
+    }
+    if (cmd.status === 'pending' || cmd.status === 'running') startCmdPolling(cmdId);
+  } catch { toast('Failed to load command', 'err'); }
+}
+
+function vpsAction(action, vpsId) {
+  if (action === 'consolidate') {
+    openModal('consolidate');
+    setTimeout(() => { const s = document.getElementById('cons-vps'); if (s) s.value = vpsId; }, 50);
+    return;
+  }
+  openModal('bot-control');
+  setTimeout(() => {
+    const s = document.getElementById('bc-vps'); if (s) s.value = vpsId;
+    document.getElementById('bc-action').value = action;
+    selectBcAction(action);
+  }, 50);
+}
+
+// Load command history on startup
+setTimeout(loadCommandHistory, 2000);
+setInterval(loadCommandHistory, 30000);
 </script>
 </body>
 </html>

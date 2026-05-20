@@ -217,6 +217,133 @@ async function getSnapshot() {
   };
 }
 
+// ── Command Queue (Dashboard → VPS bot) ─────────────────────────────────
+// Commands flow: Dashboard UI → Redis → VPS bot polls → executes → pushes result
+
+async function enqueueCommand(cmd) {
+  const id = cmd.id || `cmd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const payload = {
+    id,
+    type: cmd.type,         // 'withdraw', 'bot-control', 'config-change', 'run-mode', 'consolidate', 'check-stuck', 'check-balance'
+    params: cmd.params || {},
+    targetVps: cmd.targetVps || 'all',   // 'all' or specific vpsId
+    targetWallets: cmd.targetWallets || [], // [] = all, [1,3] = specific
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    result: null,
+    progress: [],
+  };
+
+  // Save to memory
+  if (!mem.commands) mem.commands = {};
+  mem.commands[id] = payload;
+
+  // Save to Redis
+  const r = getRedis();
+  if (r) {
+    await redisSet(`${KEY_PREFIX}cmd:${id}`, payload, 3600); // 1h TTL
+    await redisSadd(`${KEY_PREFIX}cmd_pending`, id);
+  }
+
+  return payload;
+}
+
+async function getCommand(cmdId) {
+  // Try Redis first
+  const r = getRedis();
+  if (r) {
+    const cmd = await redisGet(`${KEY_PREFIX}cmd:${cmdId}`);
+    if (cmd) return cmd;
+  }
+  // Fallback to memory
+  return mem.commands?.[cmdId] || null;
+}
+
+async function getPendingCommands(vpsId) {
+  const r = getRedis();
+  let ids = [];
+
+  if (r) {
+    ids = await redisSmembers(`${KEY_PREFIX}cmd_pending`);
+  } else {
+    ids = Object.keys(mem.commands || {}).filter(id => mem.commands[id]?.status === 'pending');
+  }
+
+  const commands = [];
+  for (const id of ids) {
+    const cmd = await getCommand(id);
+    if (!cmd || cmd.status !== 'pending') continue;
+    // Filter by VPS
+    if (vpsId && cmd.targetVps !== 'all' && cmd.targetVps !== vpsId) continue;
+    commands.push(cmd);
+  }
+
+  return commands;
+}
+
+async function updateCommandResult(cmdId, update) {
+  const cmd = await getCommand(cmdId);
+  if (!cmd) return null;
+
+  const updated = { ...cmd, ...update, updatedAt: new Date().toISOString() };
+
+  // Update memory
+  if (!mem.commands) mem.commands = {};
+  mem.commands[cmdId] = updated;
+
+  // Update Redis
+  const r = getRedis();
+  if (r) {
+    await redisSet(`${KEY_PREFIX}cmd:${cmdId}`, updated, 3600);
+    // Remove from pending set if completed/failed
+    if (updated.status === 'completed' || updated.status === 'failed') {
+      try { await r.srem(`${KEY_PREFIX}cmd_pending`, cmdId); } catch {}
+    }
+  }
+
+  return updated;
+}
+
+async function addCommandProgress(cmdId, progressLine) {
+  const cmd = await getCommand(cmdId);
+  if (!cmd) return;
+  const progress = cmd.progress || [];
+  progress.push({ ts: new Date().toISOString(), msg: progressLine });
+  // Keep last 50 lines
+  while (progress.length > 50) progress.shift();
+  await updateCommandResult(cmdId, { progress });
+}
+
+async function getRecentCommands(limit = 20) {
+  const r = getRedis();
+  let allCmds = [];
+
+  if (r) {
+    // Get both pending and recently completed
+    const pendingIds = await redisSmembers(`${KEY_PREFIX}cmd_pending`);
+    const recentIds = await redisSmembers(`${KEY_PREFIX}cmd_recent`);
+    const ids = [...new Set([...pendingIds, ...recentIds])];
+    for (const id of ids) {
+      const cmd = await redisGet(`${KEY_PREFIX}cmd:${id}`);
+      if (cmd) allCmds.push(cmd);
+    }
+  } else {
+    allCmds = Object.values(mem.commands || {});
+  }
+
+  // Sort by createdAt desc
+  allCmds.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return allCmds.slice(0, limit);
+}
+
+// Track recently completed commands
+async function markCommandCompleted(cmdId) {
+  const r = getRedis();
+  if (r) {
+    await redisSadd(`${KEY_PREFIX}cmd_recent`, cmdId);
+  }
+}
+
 // ── Health check ────────────────────────────────────────────────────────
 async function getHealth() {
   const snapshot = await getSnapshot();
@@ -230,4 +357,9 @@ async function getHealth() {
   };
 }
 
-module.exports = { saveVpsPush, getSnapshot, getHealth };
+module.exports = {
+  saveVpsPush, getSnapshot, getHealth,
+  enqueueCommand, getCommand, getPendingCommands,
+  updateCommandResult, addCommandProgress,
+  getRecentCommands, markCommandCompleted,
+};

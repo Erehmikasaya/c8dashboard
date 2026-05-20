@@ -8,6 +8,7 @@
     { "source": "/api/summary", "destination": "/api/summary" },
     { "source": "/api/stream", "destination": "/api/stream" },
     { "source": "/api/accounts", "destination": "/api/accounts" },
+    { "source": "/api/command", "destination": "/api/command" },
     { "source": "/health", "destination": "/api/health" }
   ],
   "headers": [
